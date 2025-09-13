@@ -210,7 +210,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Handle messages from the webview
 		currentPanel.webview.onDidReceiveMessage(
-			async (message) => {
+			async (message: any) => {
 				switch (message.command) {
 					case 'changeLevel':
 						currentAbstractionLevel = message.level;
@@ -231,7 +231,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}, null, context.subscriptions);
 
 		// Update content when document content changes
-		const documentChangeListener = vscode.workspace.onDidChangeTextDocument(e => {
+		const documentChangeListener = vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
 			if (currentPanel && vscode.window.activeTextEditor?.document === e.document) {
 				updatePanelContent();
 			}
@@ -239,7 +239,7 @@ export function activate(context: vscode.ExtensionContext) {
 		context.subscriptions.push(documentChangeListener);
 
 		// Update content when configuration changes (only register once)
-		const configChangeListener = vscode.workspace.onDidChangeConfiguration(e => {
+		const configChangeListener = vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
 			if (e.affectsConfiguration('sampleTextPanel') && currentPanel) {
 				updatePanelContent();
 			}
@@ -531,7 +531,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			// Re-register message handler
 			currentPanel.webview.onDidReceiveMessage(
-				async (message) => {
+				async (message: any) => {
 					switch (message.command) {
 						case 'changeLevel':
 							currentAbstractionLevel = message.level;
