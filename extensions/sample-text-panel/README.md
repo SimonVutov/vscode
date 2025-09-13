@@ -6,7 +6,7 @@ This VS Code extension provides AI-powered code analysis with multiple abstracti
 
 - **AI-Powered Analysis**: Get intelligent summaries of your code at different abstraction levels
 - **Interactive Slider**: Adjust between 5 levels from high-level overview to complete breakdown
-- **Smart Caching**: Summaries are cached locally to avoid re-running AI analysis and save API credits
+- **Database Storage**: Summaries are stored in a local database to avoid re-running AI analysis and save API tokens
 - **Real-time Updates**: Analysis updates automatically when you modify code or switch files
 - **Multiple AI Models**: Configurable API endpoint and model selection (OpenAI GPT-3.5/4, etc.)
 - **Automatic Panel Display**: Panel appears automatically when you open code files
@@ -37,12 +37,13 @@ Configure the extension through VS Code settings:
 - `sampleTextPanel.apiEndpoint`: AI service endpoint (default: OpenAI)
 - `sampleTextPanel.model`: AI model to use (default: gpt-3.5-turbo)
 
-## Caching System
+## Database System
 
-- Summaries are automatically cached in `.vscode/ai-summaries/` directory
-- Cache files are named with file hash and abstraction level
-- Cache is invalidated when file content changes
-- Saves API credits by reusing previous analyses
+- Summaries are automatically stored in `.vscode/ai-analysis-db.json`
+- Database entries are keyed by file path and abstraction level
+- Database is invalidated when file content changes (using SHA256 hash)
+- Saves API tokens by reusing previous analyses
+- Fast in-memory access with persistent disk storage
 
 ## Commands
 

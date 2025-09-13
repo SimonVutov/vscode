@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 const SAMPLE_TEXT_VIEW_TYPE = 'sampleTextPanel.view';
 
@@ -32,6 +33,8 @@ const ABSTRACTION_LEVELS = {
 };
 
 export function activate(context: vscode.ExtensionContext) {
+	// Initialize database on activation
+	loadDatabase();
 
 	// Function to check if a document is a code file
 	function isCodeFile(document: vscode.TextDocument | undefined): boolean {
@@ -42,97 +45,100 @@ export function activate(context: vscode.ExtensionContext) {
 		return CODE_LANGUAGES.has(document.languageId);
 	}
 
-	// Function to get cache directory for a file
-	function getCacheDir(filePath: string): string {
-		const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
-		const baseDir = workspaceFolder?.uri.fsPath || path.dirname(filePath);
-		return path.join(baseDir, '.vscode', 'ai-summaries');
+	// Simple in-memory database for storing summaries
+	interface SummaryRecord {
+		filePath: string;
+		level: number;
+		summary: string;
+		contentHash: string;
+		timestamp: number;
 	}
 
-	// Function to get cache file path for a specific abstraction level
-	function getCacheFilePath(filePath: string, level: number): string {
-		const cacheDir = getCacheDir(filePath);
-		const fileName = path.basename(filePath);
-		const hash = Buffer.from(filePath).toString('base64').replace(/[/+=]/g, '_');
-		return path.join(cacheDir, `${hash}_${fileName}_level${level}.json`);
+	let summaryDatabase: Map<string, SummaryRecord> = new Map();
+
+	// Function to get database file path
+	function getDatabasePath(): string {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		const baseDir = workspaceFolder?.uri.fsPath || vscode.env.appRoot;
+		return path.join(baseDir, '.vscode', 'ai-analysis-db.json');
 	}
 
-	// Function to save summary to cache
-	function saveSummaryToCache(filePath: string, level: number, summary: string, contentHash: string): void {
+	// Function to load database from disk
+	function loadDatabase(): void {
 		try {
-			const cacheFilePath = getCacheFilePath(filePath, level);
-			const cacheDir = path.dirname(cacheFilePath);
-
-			// Create cache directory if it doesn't exist
-			if (!fs.existsSync(cacheDir)) {
-				fs.mkdirSync(cacheDir, { recursive: true });
+			const dbPath = getDatabasePath();
+			if (fs.existsSync(dbPath)) {
+				const data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+				summaryDatabase = new Map(Object.entries(data).map(([key, value]) => [key, value as SummaryRecord]));
 			}
-
-			const cacheData = {
-				summary,
-				contentHash,
-				timestamp: Date.now(),
-				level,
-				filePath
-			};
-
-			fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData, null, 2));
 		} catch (error) {
-			console.error('Failed to save summary to cache:', error);
+			console.error('Failed to load database:', error);
+			summaryDatabase = new Map();
 		}
 	}
 
-	// Function to load summary from cache
-	function loadSummaryFromCache(filePath: string, level: number, currentContentHash: string): string | null {
+	// Function to save database to disk
+	function saveDatabase(): void {
 		try {
-			const cacheFilePath = getCacheFilePath(filePath, level);
+			const dbPath = getDatabasePath();
+			const dbDir = path.dirname(dbPath);
 
-			if (!fs.existsSync(cacheFilePath)) {
-				return null;
+			// Create directory if it doesn't exist
+			if (!fs.existsSync(dbDir)) {
+				fs.mkdirSync(dbDir, { recursive: true });
 			}
 
-			const cacheData = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
-
-			// Check if cache is still valid (content hasn't changed)
-			if (cacheData.contentHash === currentContentHash) {
-				return cacheData.summary;
-			}
-
-			return null;
+			const data = Object.fromEntries(summaryDatabase);
+			fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
 		} catch (error) {
-			console.error('Failed to load summary from cache:', error);
-			return null;
+			console.error('Failed to save database:', error);
 		}
+	}
+
+	// Function to generate database key
+	function getDatabaseKey(filePath: string, level: number): string {
+		return `${filePath}:level${level}`;
+	}
+
+	// Function to save summary to database
+	function saveSummaryToDatabase(filePath: string, level: number, summary: string, contentHash: string): void {
+		const key = getDatabaseKey(filePath, level);
+		const record: SummaryRecord = {
+			filePath,
+			level,
+			summary,
+			contentHash,
+			timestamp: Date.now()
+		};
+
+		summaryDatabase.set(key, record);
+		saveDatabase();
+	}
+
+	// Function to load summary from database
+	function loadSummaryFromDatabase(filePath: string, level: number, currentContentHash: string): string | null {
+		const key = getDatabaseKey(filePath, level);
+		const record = summaryDatabase.get(key);
+
+		if (record && record.contentHash === currentContentHash) {
+			return record.summary;
+		}
+
+		return null;
 	}
 
 	// Function to generate content hash
 	function generateContentHash(content: string): string {
-		return Buffer.from(content).toString('base64').slice(0, 16);
+		return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
 	}
 
-	// Function to call AI model for summarization (placeholder for now)
-	async function generateAISummary(code: string, level: number): Promise<string> {
-		// TODO: Replace with actual AI API call
-		const levelConfig = ABSTRACTION_LEVELS[level as keyof typeof ABSTRACTION_LEVELS];
+	// Function to generate simple summary format
+	async function generateSimpleSummary(code: string, level: number): Promise<string> {
+		// Simple format: "Abstraction level X + TEXT OF FILE SELECTED"
+		// Simulate processing time (remove this later when connecting to AI)
+		await new Promise(resolve => setTimeout(resolve, 500));
 
-		// Simulate AI processing time
-		await new Promise(resolve => setTimeout(resolve, 1000));
-
-		// Mock AI response based on level
-		switch (level) {
-			case 1:
-				return `High-level: This code implements ${code.split('\n')[0] || 'functionality'}.`;
-			case 2:
-				return `Key components: Main functions and classes handling ${code.length > 100 ? 'complex' : 'simple'} operations.`;
-			case 3:
-				return `Functional summary: The code contains ${code.split('function').length - 1} functions and manages data flow through various operations.`;
-			case 4:
-				return `Detailed analysis: This implementation uses ${code.split('\n').length} lines of code with specific logic patterns and error handling.`;
-			case 5:
-				return `Complete breakdown: Comprehensive analysis of all ${code.split('\n').length} lines, including variable declarations, function signatures, and implementation details.`;
-			default:
-				return 'Analysis not available.';
-		}
+		return `Abstraction level ${level} + ${code}`;
 	}
 
 	// Function to get or generate summary for current abstraction level
@@ -151,18 +157,20 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const contentHash = generateContentHash(code);
 
-		// Try to load from cache first
-		const cachedSummary = loadSummaryFromCache(filePath, currentAbstractionLevel, contentHash);
+		// Try to load from database first
+		const cachedSummary = loadSummaryFromDatabase(filePath, currentAbstractionLevel, contentHash);
 		if (cachedSummary) {
+			console.log(`Loaded from database: ${filePath} level ${currentAbstractionLevel}`);
 			return cachedSummary;
 		}
 
-		// Generate new summary with AI
+		// Generate new summary
 		try {
-			const summary = await generateAISummary(code, currentAbstractionLevel);
+			console.log(`Generating new summary: ${filePath} level ${currentAbstractionLevel}`);
+			const summary = await generateSimpleSummary(code, currentAbstractionLevel);
 
-			// Save to cache
-			saveSummaryToCache(filePath, currentAbstractionLevel, summary, contentHash);
+			// Save to database
+			saveSummaryToDatabase(filePath, currentAbstractionLevel, summary, contentHash);
 
 			return summary;
 		} catch (error) {
@@ -406,7 +414,7 @@ export function activate(context: vscode.ExtensionContext) {
 					</div>
 
 					<div class="footer">
-						AI-powered code analysis with smart caching. Summaries are cached locally to save API credits.
+						AI-powered code analysis with database storage. Summaries are stored locally to save API tokens.
 					</div>
 				</div>
 
@@ -546,3 +554,4 @@ export function deactivate() {
 		clearTimeout(debounceTimer);
 	}
 }
+
