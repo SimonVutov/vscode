@@ -32,9 +32,45 @@ const ABSTRACTION_LEVELS = {
 	5: { name: 'Complete Breakdown', prompt: 'Give a comprehensive analysis including all functions, variables, edge cases, and technical implementation details.' }
 };
 
+// Simple in-memory database for storing summaries
+interface SummaryRecord {
+	filePath: string;
+	level: number;
+	summary: string;
+	contentHash: string;
+	timestamp: number;
+}
+
+// Initialize database immediately at module level
+let summaryDatabase: Map<string, SummaryRecord> = new Map();
+
+// Function to get database file path
+function getDatabasePath(): string {
+	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+	const baseDir = workspaceFolder?.uri.fsPath || vscode.env.appRoot;
+	return path.join(baseDir, '.vscode', 'ai-analysis-db.json');
+}
+
+// Function to load database from disk
+function loadDatabaseFromDisk(): void {
+	try {
+		const dbPath = getDatabasePath();
+		if (fs.existsSync(dbPath)) {
+			const data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+			summaryDatabase = new Map(Object.entries(data).map(([key, value]) => [key, value as SummaryRecord]));
+			console.log(`Loaded ${summaryDatabase.size} entries from database`);
+		} else {
+			console.log('No existing database found, starting with empty database');
+		}
+	} catch (error) {
+		console.error('Failed to load database:', error);
+		summaryDatabase = new Map();
+	}
+}
+
 export function activate(context: vscode.ExtensionContext) {
-	// Initialize database on activation
-	loadDatabase();
+	// Load database from disk on activation
+	loadDatabaseFromDisk();
 
 	// Function to check if a document is a code file
 	function isCodeFile(document: vscode.TextDocument | undefined): boolean {
@@ -43,38 +79,6 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		return CODE_LANGUAGES.has(document.languageId);
-	}
-
-	// Simple in-memory database for storing summaries
-	interface SummaryRecord {
-		filePath: string;
-		level: number;
-		summary: string;
-		contentHash: string;
-		timestamp: number;
-	}
-
-	let summaryDatabase: Map<string, SummaryRecord> = new Map();
-
-	// Function to get database file path
-	function getDatabasePath(): string {
-		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-		const baseDir = workspaceFolder?.uri.fsPath || vscode.env.appRoot;
-		return path.join(baseDir, '.vscode', 'ai-analysis-db.json');
-	}
-
-	// Function to load database from disk
-	function loadDatabase(): void {
-		try {
-			const dbPath = getDatabasePath();
-			if (fs.existsSync(dbPath)) {
-				const data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-				summaryDatabase = new Map(Object.entries(data).map(([key, value]) => [key, value as SummaryRecord]));
-			}
-		} catch (error) {
-			console.error('Failed to load database:', error);
-			summaryDatabase = new Map();
-		}
 	}
 
 	// Function to save database to disk
@@ -90,6 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const data = Object.fromEntries(summaryDatabase);
 			fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
+			console.log(`Saved ${summaryDatabase.size} entries to database`);
 		} catch (error) {
 			console.error('Failed to save database:', error);
 		}
