@@ -222,5 +222,20 @@
 	"github.copilot.chat.advanced.taskTools.enabled": true,
 	"chat.promptFilesRecommendations": {
 		"plan": true
-	}
+	},
+
+	// --- HTTP/Network Configuration ---
+	"http.proxySupport": "on",
+	"http.useLocalProxyConfiguration": true,
+	"http.fetchAdditionalSupport": true,
+	"http.systemCertificates": true,
+	"http.experimental.systemCertificatesV2": true,
+
+	// --- Extension Marketplace Configuration ---
+	"extensions.gallery.serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
+	"extensions.gallery.itemUrl": "https://marketplace.visualstudio.com/items",
+	"extensions.gallery.publisherUrl": "https://marketplace.visualstudio.com/manage/publishers",
+	"extensions.gallery.resourceUrlTemplate": "https://{publisher}.gallerycdn.vsassets.io/extensions/{publisher}/{name}/{version}/{assetName}",
+	"extensions.gallery.controlUrl": "https://az764295.vo.msecnd.net/extensions/marketplace.json",
+	"extensions.gallery.nlsBaseUrl": "https://www.vscode-unpkg.net/_lp"
 }

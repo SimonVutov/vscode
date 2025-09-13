@@ -82,5 +82,13 @@
 				"publisherDisplayName": "Microsoft"
 			}
 		}
-	]
+	],
+	"extensionsGallery": {
+		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
+		"itemUrl": "https://marketplace.visualstudio.com/items",
+		"publisherUrl": "https://marketplace.visualstudio.com/manage/publishers",
+		"resourceUrlTemplate": "https://{publisher}.gallerycdn.vsassets.io/extensions/{publisher}/{name}/{version}/{assetName}",
+		"controlUrl": "https://az764295.vo.msecnd.net/extensions/marketplace.json",
+		"nlsBaseUrl": "https://www.vscode-unpkg.net/_lp"
+	}
 }
