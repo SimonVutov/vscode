@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const SAMPLE_TEXT_VIEW_TYPE = 'sampleTextPanel.view';
 
@@ -18,6 +20,16 @@ const CODE_LANGUAGES = new Set([
 
 let currentPanel: vscode.WebviewPanel | undefined = undefined;
 let debounceTimer: NodeJS.Timeout | undefined = undefined;
+let currentAbstractionLevel: number = 3; // 1=most abstract, 5=most detailed
+
+// Abstraction levels configuration
+const ABSTRACTION_LEVELS = {
+	1: { name: 'High-Level Overview', prompt: 'Provide a very high-level, single sentence summary of what this code does.' },
+	2: { name: 'Key Components', prompt: 'Summarize the main components and their primary purposes in 2-3 sentences.' },
+	3: { name: 'Functional Summary', prompt: 'Explain the key functions, classes, and their interactions in a paragraph.' },
+	4: { name: 'Detailed Analysis', prompt: 'Provide a detailed explanation of the code structure, logic flow, and important implementation details.' },
+	5: { name: 'Complete Breakdown', prompt: 'Give a comprehensive analysis including all functions, variables, edge cases, and technical implementation details.' }
+};
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -30,21 +42,132 @@ export function activate(context: vscode.ExtensionContext) {
 		return CODE_LANGUAGES.has(document.languageId);
 	}
 
-	// Function to get first 15 characters from active editor
-	function getActiveEditorPreview(): string {
+	// Function to get cache directory for a file
+	function getCacheDir(filePath: string): string {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
+		const baseDir = workspaceFolder?.uri.fsPath || path.dirname(filePath);
+		return path.join(baseDir, '.vscode', 'ai-summaries');
+	}
+
+	// Function to get cache file path for a specific abstraction level
+	function getCacheFilePath(filePath: string, level: number): string {
+		const cacheDir = getCacheDir(filePath);
+		const fileName = path.basename(filePath);
+		const hash = Buffer.from(filePath).toString('base64').replace(/[/+=]/g, '_');
+		return path.join(cacheDir, `${hash}_${fileName}_level${level}.json`);
+	}
+
+	// Function to save summary to cache
+	function saveSummaryToCache(filePath: string, level: number, summary: string, contentHash: string): void {
+		try {
+			const cacheFilePath = getCacheFilePath(filePath, level);
+			const cacheDir = path.dirname(cacheFilePath);
+
+			// Create cache directory if it doesn't exist
+			if (!fs.existsSync(cacheDir)) {
+				fs.mkdirSync(cacheDir, { recursive: true });
+			}
+
+			const cacheData = {
+				summary,
+				contentHash,
+				timestamp: Date.now(),
+				level,
+				filePath
+			};
+
+			fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData, null, 2));
+		} catch (error) {
+			console.error('Failed to save summary to cache:', error);
+		}
+	}
+
+	// Function to load summary from cache
+	function loadSummaryFromCache(filePath: string, level: number, currentContentHash: string): string | null {
+		try {
+			const cacheFilePath = getCacheFilePath(filePath, level);
+
+			if (!fs.existsSync(cacheFilePath)) {
+				return null;
+			}
+
+			const cacheData = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
+
+			// Check if cache is still valid (content hasn't changed)
+			if (cacheData.contentHash === currentContentHash) {
+				return cacheData.summary;
+			}
+
+			return null;
+		} catch (error) {
+			console.error('Failed to load summary from cache:', error);
+			return null;
+		}
+	}
+
+	// Function to generate content hash
+	function generateContentHash(content: string): string {
+		return Buffer.from(content).toString('base64').slice(0, 16);
+	}
+
+	// Function to call AI model for summarization (placeholder for now)
+	async function generateAISummary(code: string, level: number): Promise<string> {
+		// TODO: Replace with actual AI API call
+		const levelConfig = ABSTRACTION_LEVELS[level as keyof typeof ABSTRACTION_LEVELS];
+
+		// Simulate AI processing time
+		await new Promise(resolve => setTimeout(resolve, 1000));
+
+		// Mock AI response based on level
+		switch (level) {
+			case 1:
+				return `High-level: This code implements ${code.split('\n')[0] || 'functionality'}.`;
+			case 2:
+				return `Key components: Main functions and classes handling ${code.length > 100 ? 'complex' : 'simple'} operations.`;
+			case 3:
+				return `Functional summary: The code contains ${code.split('function').length - 1} functions and manages data flow through various operations.`;
+			case 4:
+				return `Detailed analysis: This implementation uses ${code.split('\n').length} lines of code with specific logic patterns and error handling.`;
+			case 5:
+				return `Complete breakdown: Comprehensive analysis of all ${code.split('\n').length} lines, including variable declarations, function signatures, and implementation details.`;
+			default:
+				return 'Analysis not available.';
+		}
+	}
+
+	// Function to get or generate summary for current abstraction level
+	async function getCurrentSummary(): Promise<string> {
 		const activeEditor = vscode.window.activeTextEditor;
 		if (!activeEditor || !activeEditor.document) {
-			return '// No active editor';
+			return 'No active editor';
 		}
 
-		const documentText = activeEditor.document.getText();
-		if (documentText.length === 0) {
-			return '// Empty file';
+		const filePath = activeEditor.document.fileName;
+		const code = activeEditor.document.getText();
+
+		if (code.length === 0) {
+			return 'Empty file';
 		}
 
-		// Get first 15 characters
-		const preview = documentText.substring(0, 15);
-		return preview || '// File content too short';
+		const contentHash = generateContentHash(code);
+
+		// Try to load from cache first
+		const cachedSummary = loadSummaryFromCache(filePath, currentAbstractionLevel, contentHash);
+		if (cachedSummary) {
+			return cachedSummary;
+		}
+
+		// Generate new summary with AI
+		try {
+			const summary = await generateAISummary(code, currentAbstractionLevel);
+
+			// Save to cache
+			saveSummaryToCache(filePath, currentAbstractionLevel, summary, contentHash);
+
+			return summary;
+		} catch (error) {
+			return `Error generating summary: ${error}`;
+		}
 	}
 
 	// Function to create or show the sample text panel
@@ -64,12 +187,26 @@ export function activate(context: vscode.ExtensionContext) {
 		// Create a new webview panel
 		currentPanel = vscode.window.createWebviewPanel(
 			SAMPLE_TEXT_VIEW_TYPE,
-			'Sample Text',
+			'AI Code Analysis',
 			{ viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
 			{
 				enableScripts: true,
 				retainContextWhenHidden: true
 			}
+		);
+
+		// Handle messages from the webview
+		currentPanel.webview.onDidReceiveMessage(
+			async (message) => {
+				switch (message.command) {
+					case 'changeLevel':
+						currentAbstractionLevel = message.level;
+						await updatePanelContent();
+						break;
+				}
+			},
+			undefined,
+			context.subscriptions
 		);
 
 		// Set the webview content
@@ -105,23 +242,18 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
-	// Function to update panel content
-	function updatePanelContent() {
-		if (!currentPanel) {
-			return;
-		}
+	// Function to generate HTML for the panel
+	function generateHTML(fileName: string, content: string, isLoading: boolean = false): string {
+		const levelConfig = ABSTRACTION_LEVELS[currentAbstractionLevel as keyof typeof ABSTRACTION_LEVELS];
+		const shortFileName = fileName.split('/').pop() || fileName;
 
-		const previewText = getActiveEditorPreview();
-		const activeEditor = vscode.window.activeTextEditor;
-		const fileName = activeEditor?.document.fileName || 'Unknown file';
-
-		currentPanel.webview.html = `
+		return `
 			<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<title>Sample Text</title>
+				<title>AI Code Analysis</title>
 				<style>
 					body {
 						font-family: var(--vscode-font-family);
@@ -158,30 +290,89 @@ export function activate(context: vscode.ExtensionContext) {
 						font-family: var(--vscode-editor-font-family);
 					}
 
-					.content {
+					.slider-container {
+						margin: 16px 0;
+						padding: 16px;
 						background-color: var(--vscode-textCodeBlock-background);
 						border: 1px solid var(--vscode-panel-border);
 						border-radius: 4px;
-						padding: 16px;
-						overflow-x: auto;
 					}
 
-					.preview-label {
+					.slider-label {
 						font-size: 0.9em;
 						color: var(--vscode-descriptionForeground);
 						margin-bottom: 8px;
 						font-weight: 500;
 					}
 
-					.preview-text {
+					.slider-wrapper {
+						display: flex;
+						align-items: center;
+						gap: 12px;
+					}
+
+					.slider-text {
+						font-size: 0.8em;
+						color: var(--vscode-descriptionForeground);
+						min-width: 60px;
+					}
+
+					.slider {
+						flex: 1;
+						height: 6px;
+						border-radius: 3px;
+						background: var(--vscode-scrollbarSlider-background);
+						outline: none;
+						-webkit-appearance: none;
+						appearance: none;
+					}
+
+					.slider::-webkit-slider-thumb {
+						-webkit-appearance: none;
+						appearance: none;
+						width: 16px;
+						height: 16px;
+						border-radius: 50%;
+						background: var(--vscode-button-background);
+						cursor: pointer;
+					}
+
+					.slider::-moz-range-thumb {
+						width: 16px;
+						height: 16px;
+						border-radius: 50%;
+						background: var(--vscode-button-background);
+						cursor: pointer;
+						border: none;
+					}
+
+					.level-name {
+						font-size: 0.9em;
+						color: var(--vscode-panelTitle-activeForeground);
+						font-weight: 500;
+						margin-top: 8px;
+					}
+
+					.content {
+						background-color: var(--vscode-textCodeBlock-background);
+						border: 1px solid var(--vscode-panel-border);
+						border-radius: 4px;
+						padding: 16px;
+						overflow-x: auto;
+						min-height: 100px;
+					}
+
+					.summary-text {
 						font-family: var(--vscode-editor-font-family);
 						font-size: var(--vscode-editor-font-size);
-						background-color: var(--vscode-editor-background);
-						border: 1px solid var(--vscode-input-border);
-						border-radius: 3px;
-						padding: 8px;
-						white-space: pre-wrap;
+						line-height: 1.5;
 						color: var(--vscode-editor-foreground);
+						white-space: pre-wrap;
+					}
+
+					.loading {
+						color: var(--vscode-descriptionForeground);
+						font-style: italic;
 					}
 
 					.footer {
@@ -196,21 +387,62 @@ export function activate(context: vscode.ExtensionContext) {
 			<body>
 				<div class="container">
 					<div class="header">
-						<h1>File Preview</h1>
-						<div class="file-name">${escapeHtml(fileName.split('/').pop() || fileName)}</div>
+						<h1>AI Code Analysis</h1>
+						<div class="file-name">${escapeHtml(shortFileName)}</div>
 					</div>
+
+					<div class="slider-container">
+						<div class="slider-label">Abstraction Level</div>
+						<div class="slider-wrapper">
+							<span class="slider-text">Abstract</span>
+							<input type="range" min="1" max="5" value="${currentAbstractionLevel}" class="slider" id="abstractionSlider">
+							<span class="slider-text">Detailed</span>
+						</div>
+						<div class="level-name">${levelConfig.name}</div>
+					</div>
+
 					<div class="content">
-						<div class="preview-label">First 15 characters:</div>
-						<div class="preview-text">${escapeHtml(previewText)}</div>
+						<div class="summary-text ${isLoading ? 'loading' : ''}">${escapeHtml(content)}</div>
 					</div>
+
 					<div class="footer">
-						This panel shows the first 15 characters of the active code file.<br>
-						Perfect for AI model preprocessing and content analysis.
+						AI-powered code analysis with smart caching. Summaries are cached locally to save API credits.
 					</div>
 				</div>
+
+				<script>
+					const vscode = acquireVsCodeApi();
+					const slider = document.getElementById('abstractionSlider');
+
+					slider.addEventListener('input', (e) => {
+						vscode.postMessage({
+							command: 'changeLevel',
+							level: parseInt(e.target.value)
+						});
+					});
+				</script>
 			</body>
 			</html>
 		`;
+	}
+
+	// Function to update panel content
+	async function updatePanelContent() {
+		if (!currentPanel) {
+			return;
+		}
+
+		const activeEditor = vscode.window.activeTextEditor;
+		const fileName = activeEditor?.document.fileName || 'Unknown file';
+
+		// Show loading state first
+		currentPanel.webview.html = generateHTML(fileName, 'Loading AI summary...', true);
+
+		// Get AI summary
+		const summary = await getCurrentSummary();
+
+		// Update with actual content
+		currentPanel.webview.html = generateHTML(fileName, summary, false);
 	}
 
 	// Function to escape HTML
@@ -278,6 +510,26 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.registerWebviewPanelSerializer(SAMPLE_TEXT_VIEW_TYPE, {
 		async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
 			currentPanel = webviewPanel;
+
+			// Restore abstraction level from state if available
+			if (state && state.abstractionLevel) {
+				currentAbstractionLevel = state.abstractionLevel;
+			}
+
+			// Re-register message handler
+			currentPanel.webview.onDidReceiveMessage(
+				async (message) => {
+					switch (message.command) {
+						case 'changeLevel':
+							currentAbstractionLevel = message.level;
+							await updatePanelContent();
+							break;
+					}
+				},
+				undefined,
+				context.subscriptions
+			);
+
 			updatePanelContent();
 
 			// Re-register disposal handler

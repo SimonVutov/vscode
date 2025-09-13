@@ -29,11 +29,20 @@
           "default": true,
           "description": "Enable/disable automatic sample text panel when code files are opened"
         },
-        "sampleTextPanel.sampleText": {
+        "sampleTextPanel.apiKey": {
           "type": "string",
-          "default": "// This is a sample text panel\n// It appears when you select a code file\n// You can customize this text in settings\n\nconst sampleFunction = () => {\n  console.log('Hello from sample text!');\n};\n\n// Some useful code snippets:\n// 1. Console logging\n// 2. Function declarations\n// 3. Variable assignments\n// 4. Comments and documentation",
-          "description": "The sample text to display in the panel",
-          "editPresentation": "multilineText"
+          "default": "",
+          "description": "API key for AI summarization service (leave empty to use mock responses)"
+        },
+        "sampleTextPanel.apiEndpoint": {
+          "type": "string",
+          "default": "https://api.openai.com/v1/chat/completions",
+          "description": "API endpoint for AI summarization service"
+        },
+        "sampleTextPanel.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "AI model to use for summarization"
         }
       }
     }

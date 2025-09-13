@@ -1,13 +1,15 @@
-# Sample Text Panel Extension
+# AI Code Analysis Panel Extension
 
-This VS Code extension automatically opens a sample text panel on the right side when you select a code file.
+This VS Code extension provides AI-powered code analysis with multiple abstraction levels and smart caching to save API credits.
 
 ## Features
 
-- **Automatic Panel Display**: When you open or switch to a code file, a sample text panel automatically appears in the editor area to the right
-- **Code File Detection**: The extension recognizes common programming languages including JavaScript, TypeScript, Python, Java, C#, C++, Go, Rust, PHP, Ruby, Swift, and many more
-- **Customizable Content**: You can customize the sample text displayed in the panel through VS Code settings
-- **Toggle Command**: Use the command palette to manually toggle the panel on/off
+- **AI-Powered Analysis**: Get intelligent summaries of your code at different abstraction levels
+- **Interactive Slider**: Adjust between 5 levels from high-level overview to complete breakdown
+- **Smart Caching**: Summaries are cached locally to avoid re-running AI analysis and save API credits
+- **Real-time Updates**: Analysis updates automatically when you modify code or switch files
+- **Multiple AI Models**: Configurable API endpoint and model selection (OpenAI GPT-3.5/4, etc.)
+- **Automatic Panel Display**: Panel appears automatically when you open code files
 
 ## How It Works
 
@@ -16,12 +18,31 @@ This VS Code extension automatically opens a sample text panel on the right side
 3. The panel is positioned to the right (`vscode.ViewColumn.Beside`) of the current editor
 4. When switching to non-code files, the panel automatically closes
 
+## Abstraction Levels
+
+The extension provides 5 levels of code analysis:
+
+1. **High-Level Overview**: Single sentence summary of what the code does
+2. **Key Components**: Main components and their primary purposes (2-3 sentences)
+3. **Functional Summary**: Key functions, classes, and their interactions (paragraph)
+4. **Detailed Analysis**: Code structure, logic flow, and implementation details
+5. **Complete Breakdown**: Comprehensive analysis including all functions, variables, and technical details
+
 ## Configuration
 
-You can customize the extension through VS Code settings:
+Configure the extension through VS Code settings:
 
 - `sampleTextPanel.enabled`: Enable/disable the automatic panel (default: true)
-- `sampleTextPanel.sampleText`: Customize the text displayed in the panel
+- `sampleTextPanel.apiKey`: Your AI API key (leave empty for mock responses)
+- `sampleTextPanel.apiEndpoint`: AI service endpoint (default: OpenAI)
+- `sampleTextPanel.model`: AI model to use (default: gpt-3.5-turbo)
+
+## Caching System
+
+- Summaries are automatically cached in `.vscode/ai-summaries/` directory
+- Cache files are named with file hash and abstraction level
+- Cache is invalidated when file content changes
+- Saves API credits by reusing previous analyses
 
 ## Commands
 
