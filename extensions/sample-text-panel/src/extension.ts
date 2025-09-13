@@ -30,10 +30,21 @@ export function activate(context: vscode.ExtensionContext) {
 		return CODE_LANGUAGES.has(document.languageId);
 	}
 
-	// Function to get sample text from configuration
-	function getSampleText(): string {
-		const config = vscode.workspace.getConfiguration('sampleTextPanel');
-		return config.get('sampleText', '// Sample text not configured');
+	// Function to get first 15 characters from active editor
+	function getActiveEditorPreview(): string {
+		const activeEditor = vscode.window.activeTextEditor;
+		if (!activeEditor || !activeEditor.document) {
+			return '// No active editor';
+		}
+
+		const documentText = activeEditor.document.getText();
+		if (documentText.length === 0) {
+			return '// Empty file';
+		}
+
+		// Get first 15 characters
+		const preview = documentText.substring(0, 15);
+		return preview || '// File content too short';
 	}
 
 	// Function to create or show the sample text panel
@@ -69,9 +80,17 @@ export function activate(context: vscode.ExtensionContext) {
 			currentPanel = undefined;
 		}, null, context.subscriptions);
 
+		// Update content when document content changes
+		const documentChangeListener = vscode.workspace.onDidChangeTextDocument(e => {
+			if (currentPanel && vscode.window.activeTextEditor?.document === e.document) {
+				updatePanelContent();
+			}
+		});
+		context.subscriptions.push(documentChangeListener);
+
 		// Update content when configuration changes (only register once)
 		const configChangeListener = vscode.workspace.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration('sampleTextPanel.sampleText') && currentPanel) {
+			if (e.affectsConfiguration('sampleTextPanel') && currentPanel) {
 				updatePanelContent();
 			}
 		});
@@ -92,7 +111,9 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		const sampleText = getSampleText();
+		const previewText = getActiveEditorPreview();
+		const activeEditor = vscode.window.activeTextEditor;
+		const fileName = activeEditor?.document.fileName || 'Unknown file';
 
 		currentPanel.webview.html = `
 			<!DOCTYPE html>
@@ -130,15 +151,37 @@ export function activate(context: vscode.ExtensionContext) {
 						color: var(--vscode-panelTitle-activeForeground);
 					}
 
-					.content {
-						white-space: pre-wrap;
+					.file-name {
+						font-size: 0.9em;
+						color: var(--vscode-descriptionForeground);
+						margin-top: 4px;
 						font-family: var(--vscode-editor-font-family);
-						font-size: var(--vscode-editor-font-size);
+					}
+
+					.content {
 						background-color: var(--vscode-textCodeBlock-background);
 						border: 1px solid var(--vscode-panel-border);
 						border-radius: 4px;
 						padding: 16px;
 						overflow-x: auto;
+					}
+
+					.preview-label {
+						font-size: 0.9em;
+						color: var(--vscode-descriptionForeground);
+						margin-bottom: 8px;
+						font-weight: 500;
+					}
+
+					.preview-text {
+						font-family: var(--vscode-editor-font-family);
+						font-size: var(--vscode-editor-font-size);
+						background-color: var(--vscode-editor-background);
+						border: 1px solid var(--vscode-input-border);
+						border-radius: 3px;
+						padding: 8px;
+						white-space: pre-wrap;
+						color: var(--vscode-editor-foreground);
 					}
 
 					.footer {
@@ -153,12 +196,16 @@ export function activate(context: vscode.ExtensionContext) {
 			<body>
 				<div class="container">
 					<div class="header">
-						<h1>Sample Text Panel</h1>
+						<h1>File Preview</h1>
+						<div class="file-name">${escapeHtml(fileName.split('/').pop() || fileName)}</div>
 					</div>
-					<div class="content">${escapeHtml(sampleText)}</div>
+					<div class="content">
+						<div class="preview-label">First 15 characters:</div>
+						<div class="preview-text">${escapeHtml(previewText)}</div>
+					</div>
 					<div class="footer">
-						This panel appears automatically when you select a code file.<br>
-						You can customize the text in VS Code settings under "Sample Text Panel".
+						This panel shows the first 15 characters of the active code file.<br>
+						Perfect for AI model preprocessing and content analysis.
 					</div>
 				</div>
 			</body>
@@ -197,6 +244,9 @@ export function activate(context: vscode.ExtensionContext) {
 				if (currentPanel) {
 					currentPanel.reveal(vscode.ViewColumn.Beside, true);
 				}
+			} else if (shouldShowPanel && panelExists && panelCurrentlyVisible) {
+				// Update content when switching between code files
+				updatePanelContent();
 			} else if (!shouldShowPanel && panelCurrentlyVisible) {
 				// Hide panel when switching away from code files
 				hideSampleTextPanel();
