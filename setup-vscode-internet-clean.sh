@@ -64,14 +64,14 @@ cat > .vscode/settings.json << 'EOF'
 {
   // VS Code OSS Internet Connectivity Configuration
   // This configuration enables internet access and extension marketplace connectivity
-  
+
   // --- HTTP/Network Configuration ---
   "http.proxySupport": "on",
   "http.useLocalProxyConfiguration": true,
   "http.fetchAdditionalSupport": true,
   "http.systemCertificates": true,
   "http.experimental.systemCertificatesV2": true,
-  
+
   // --- Extension Marketplace Configuration ---
   "extensions.gallery.serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
   "extensions.gallery.itemUrl": "https://marketplace.visualstudio.com/items",
@@ -79,7 +79,7 @@ cat > .vscode/settings.json << 'EOF'
   "extensions.gallery.resourceUrlTemplate": "https://{publisher}.gallerycdn.vsassets.io/extensions/{publisher}/{name}/{version}/{assetName}",
   "extensions.gallery.controlUrl": "https://az764295.vo.msecnd.net/extensions/marketplace.json",
   "extensions.gallery.nlsBaseUrl": "https://www.vscode-unpkg.net/_lp",
-  
+
   // --- Additional Settings ---
   "telemetry.enableTelemetry": false,
   "telemetry.enableCrashReporter": false,
@@ -94,7 +94,7 @@ echo "Configuring product.json for marketplace access..."
 # Read the current product.json and add extensionsGallery if not present
 if ! grep -q '"extensionsGallery"' product.json; then
     echo "Adding extensionsGallery configuration to product.json..."
-    
+
     # Insert the extensionsGallery configuration before the last closing brace
     # This is a simple approach - in production you might want to use jq for more robust JSON manipulation
     sed -i.bak '$i\
@@ -106,7 +106,7 @@ if ! grep -q '"extensionsGallery"' product.json; then
     "controlUrl": "https://az764295.vo.msecnd.net/extensions/marketplace.json",\
     "nlsBaseUrl": "https://www.vscode-unpkg.net/_lp"\
   },' product.json
-    
+
     # Clean up temporary files
     rm -f product.json.bak
 else

@@ -66,14 +66,14 @@ REM Create settings.json with internet configuration
 echo {
 echo   // VS Code OSS Internet Connectivity Configuration
 echo   // This configuration enables internet access and extension marketplace connectivity
-echo   
+echo
 echo   // --- HTTP/Network Configuration ---
 echo   "http.proxySupport": "on",
 echo   "http.useLocalProxyConfiguration": true,
 echo   "http.fetchAdditionalSupport": true,
 echo   "http.systemCertificates": true,
 echo   "http.experimental.systemCertificatesV2": true,
-echo   
+echo
 echo   // --- Extension Marketplace Configuration ---
 echo   "extensions.gallery.serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
 echo   "extensions.gallery.itemUrl": "https://marketplace.visualstudio.com/items",
@@ -81,7 +81,7 @@ echo   "extensions.gallery.publisherUrl": "https://marketplace.visualstudio.com/
 echo   "extensions.gallery.resourceUrlTemplate": "https://{publisher}.gallerycdn.vsassets.io/extensions/{publisher}/{name}/{version}/{assetName}",
 echo   "extensions.gallery.controlUrl": "https://az764295.vo.msecnd.net/extensions/marketplace.json",
 echo   "extensions.gallery.nlsBaseUrl": "https://www.vscode-unpkg.net/_lp",
-echo   
+echo
 echo   // --- Additional Settings ---
 echo   "telemetry.enableTelemetry": false,
 echo   "telemetry.enableCrashReporter": false,
@@ -97,7 +97,7 @@ REM Check if extensionsGallery already exists
 findstr /C:"extensionsGallery" product.json >nul
 if errorlevel 1 (
     echo Adding extensionsGallery configuration to product.json...
-    
+
     REM Create a temporary file with the extensionsGallery configuration
     (
     echo   "extensionsGallery": {
@@ -109,11 +109,11 @@ if errorlevel 1 (
     echo     "nlsBaseUrl": "https://www.vscode-unpkg.net/_lp"
     echo   },
     ) > temp_extensions_gallery.txt
-    
+
     REM Insert the extensionsGallery configuration before the last closing brace
     REM This is a simplified approach for Windows batch
     powershell -Command "(Get-Content product.json) -replace '}$', (Get-Content temp_extensions_gallery.txt) + '`n}' | Set-Content product.json"
-    
+
     REM Clean up temporary files
     del temp_extensions_gallery.txt >nul 2>&1
 ) else (
