@@ -1,0 +1,59 @@
+{
+  "name": "sample-text-panel",
+  "displayName": "Sample Text Panel",
+  "description": "Shows a sample text panel when a code file is selected",
+  "version": "1.0.0",
+  "publisher": "vscode",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "main": "./out/extension.js",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "sampleTextPanel.toggle",
+        "title": "Toggle Sample Text Panel"
+      }
+    ],
+    "configuration": {
+      "title": "Sample Text Panel",
+      "properties": {
+        "sampleTextPanel.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable automatic sample text panel when code files are opened"
+        },
+        "sampleTextPanel.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for AI summarization service (leave empty to use mock responses)"
+        },
+        "sampleTextPanel.apiEndpoint": {
+          "type": "string",
+          "default": "https://api.openai.com/v1/chat/completions",
+          "description": "API endpoint for AI summarization service"
+        },
+        "sampleTextPanel.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "AI model to use for summarization"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.70.0",
+    "typescript": "^4.9.4"
+  }
+}
