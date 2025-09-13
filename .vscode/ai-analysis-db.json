@@ -75,5 +75,40 @@
     "summary": "Abstraction level 4 + /*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n// Keep bootstrap-esm.js from redefining 'fs'.\ndelete process.env['ELECTRON_RUN_AS_NODE'];\n",
     "contentHash": "ea2ea1b70333cd39",
     "timestamp": 1757742765934
+  },
+  "/Users/simonvutov/Documents/vscode/src/bootstrap-server.ts:level2": {
+    "filePath": "/Users/simonvutov/Documents/vscode/src/bootstrap-server.ts",
+    "level": 2,
+    "summary": "Abstraction level 2 + /*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n// Keep bootstrap-esm.js from redefining 'fs'.\ndelete process.env['ELECTRON_RUN_AS_NODE'];\n",
+    "contentHash": "ea2ea1b70333cd39",
+    "timestamp": 1757742890670
+  },
+  "/Users/simonvutov/Documents/vscode/src/bootstrap-server.ts:level3": {
+    "filePath": "/Users/simonvutov/Documents/vscode/src/bootstrap-server.ts",
+    "level": 3,
+    "summary": "Abstraction level 3 + /*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n// Keep bootstrap-esm.js from redefining 'fs'.\ndelete process.env['ELECTRON_RUN_AS_NODE'];\n",
+    "contentHash": "ea2ea1b70333cd39",
+    "timestamp": 1757742935938
+  },
+  "/Users/simonvutov/Documents/vscode/src/bootstrap-meta.ts:level3": {
+    "filePath": "/Users/simonvutov/Documents/vscode/src/bootstrap-meta.ts",
+    "level": 3,
+    "summary": "Abstraction level 3 + /*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createRequire } from 'node:module';\nimport type { IProductConfiguration } from './vs/base/common/product.js';\n\nconst require = createRequire(import.meta.url);\n\nlet productObj: Partial<IProductConfiguration> & { BUILD_INSERT_PRODUCT_CONFIGURATION?: string } = { BUILD_INSERT_PRODUCT_CONFIGURATION: 'BUILD_INSERT_PRODUCT_CONFIGURATION' }; // DO NOT MODIFY, PATCHED DURING BUILD\nif (productObj['BUILD_INSERT_PRODUCT_CONFIGURATION']) {\n\tproductObj = require('../product.json'); // Running out of sources\n}\n\nlet pkgObj = { BUILD_INSERT_PACKAGE_CONFIGURATION: 'BUILD_INSERT_PACKAGE_CONFIGURATION' }; // DO NOT MODIFY, PATCHED DURING BUILD\nif (pkgObj['BUILD_INSERT_PACKAGE_CONFIGURATION']) {\n\tpkgObj = require('../package.json'); // Running out of sources\n}\n\nlet productOverridesObj = {};\nif (process.env['VSCODE_DEV']) {\n\ttry {\n\t\tproductOverridesObj = require('../product.overrides.json');\n\t\tproductObj = Object.assign(productObj, productOverridesObj);\n\t} catch (error) { /* ignore */ }\n}\n\nexport const product = productObj;\nexport const pkg = pkgObj;\n",
+    "contentHash": "c6b1f161076c0b8c",
+    "timestamp": 1757742937625
+  },
+  "/Users/simonvutov/Documents/vscode/src/bootstrap-meta.ts:level4": {
+    "filePath": "/Users/simonvutov/Documents/vscode/src/bootstrap-meta.ts",
+    "level": 4,
+    "summary": "Abstraction level 4 + /*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createRequire } from 'node:module';\nimport type { IProductConfiguration } from './vs/base/common/product.js';\n\nconst require = createRequire(import.meta.url);\n\nlet productObj: Partial<IProductConfiguration> & { BUILD_INSERT_PRODUCT_CONFIGURATION?: string } = { BUILD_INSERT_PRODUCT_CONFIGURATION: 'BUILD_INSERT_PRODUCT_CONFIGURATION' }; // DO NOT MODIFY, PATCHED DURING BUILD\nif (productObj['BUILD_INSERT_PRODUCT_CONFIGURATION']) {\n\tproductObj = require('../product.json'); // Running out of sources\n}\n\nlet pkgObj = { BUILD_INSERT_PACKAGE_CONFIGURATION: 'BUILD_INSERT_PACKAGE_CONFIGURATION' }; // DO NOT MODIFY, PATCHED DURING BUILD\nif (pkgObj['BUILD_INSERT_PACKAGE_CONFIGURATION']) {\n\tpkgObj = require('../package.json'); // Running out of sources\n}\n\nlet productOverridesObj = {};\nif (process.env['VSCODE_DEV']) {\n\ttry {\n\t\tproductOverridesObj = require('../product.overrides.json');\n\t\tproductObj = Object.assign(productObj, productOverridesObj);\n\t} catch (error) { /* ignore */ }\n}\n\nexport const product = productObj;\nexport const pkg = pkgObj;\n",
+    "contentHash": "c6b1f161076c0b8c",
+    "timestamp": 1757742949978
+  },
+  "/Users/simonvutov/Documents/vscode/src/bootstrap-meta.ts:level2": {
+    "filePath": "/Users/simonvutov/Documents/vscode/src/bootstrap-meta.ts",
+    "level": 2,
+    "summary": "Abstraction level 2 + /*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createRequire } from 'node:module';\nimport type { IProductConfiguration } from './vs/base/common/product.js';\n\nconst require = createRequire(import.meta.url);\n\nlet productObj: Partial<IProductConfiguration> & { BUILD_INSERT_PRODUCT_CONFIGURATION?: string } = { BUILD_INSERT_PRODUCT_CONFIGURATION: 'BUILD_INSERT_PRODUCT_CONFIGURATION' }; // DO NOT MODIFY, PATCHED DURING BUILD\nif (productObj['BUILD_INSERT_PRODUCT_CONFIGURATION']) {\n\tproductObj = require('../product.json'); // Running out of sources\n}\n\nlet pkgObj = { BUILD_INSERT_PACKAGE_CONFIGURATION: 'BUILD_INSERT_PACKAGE_CONFIGURATION' }; // DO NOT MODIFY, PATCHED DURING BUILD\nif (pkgObj['BUILD_INSERT_PACKAGE_CONFIGURATION']) {\n\tpkgObj = require('../package.json'); // Running out of sources\n}\n\nlet productOverridesObj = {};\nif (process.env['VSCODE_DEV']) {\n\ttry {\n\t\tproductOverridesObj = require('../product.overrides.json');\n\t\tproductObj = Object.assign(productObj, productOverridesObj);\n\t} catch (error) { /* ignore */ }\n}\n\nexport const product = productObj;\nexport const pkg = pkgObj;\n",
+    "contentHash": "c6b1f161076c0b8c",
+    "timestamp": 1757743034095
   }
 }
